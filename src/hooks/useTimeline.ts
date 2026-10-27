@@ -1,23 +1,26 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { crawlFranchise } from '../api/crawler';
+import { crawlTimeline } from '../api/crawler';
 import type { RawEdge } from '../api/crawler';
+import { crawlTMDBMovieCollection, crawlTMDBTVUniverse } from '../api/tmdbCrawler';
 import { resolveWatchOrder } from '../utils/watchOrder';
 import { buildDagreLayout } from '../utils/layout';
 import type {
   AniListMedia,
   AnimeNodeData,
-  FranchiseStats,
+  TimelineStats,
   GraphFilterOptions,
   UserMediaListEntry,
   ViewMode,
 } from '../types/anime';
+import type { SuiteMode } from '../types/media';
 import type { Edge, Node } from '@xyflow/react';
 
-export function useFranchise(
+export function useTimeline(
   userEntries: Map<number, UserMediaListEntry> | null,
   filters: GraphFilterOptions,
   viewMode: ViewMode = 'detailed',
-  theme: 'dark' | 'light' = 'dark'
+  theme: 'dark' | 'light' = 'dark',
+  suiteMode: SuiteMode = 'anime'
 ) {
   const [rootMediaId, setRootMediaId] = useState<number | null>(() => {
     const urlParams = new URLSearchParams(window.location.search);
@@ -37,10 +40,17 @@ export function useFranchise(
   const [mediaMap, setMediaMap] = useState<Map<number, AniListMedia>>(new Map());
   const [rawEdges, setRawEdges] = useState<RawEdge[]>([]);
   const [selectedMediaId, setSelectedMediaId] = useState<number | null>(null);
+  const [activeTimelineMode, setActiveTimelineMode] = useState<SuiteMode>(suiteMode);
   const activeCrawlIdRef = useRef<number>(0);
   const abortControllerRef = useRef<AbortController | null>(null);
 
-  const loadFranchise = useCallback(async (id: number) => {
+  useEffect(() => {
+    setActiveTimelineMode(suiteMode);
+  }, [suiteMode]);
+
+  const loadTimeline = useCallback(async (id: number, overrideMode?: SuiteMode) => {
+    const currentMode = overrideMode || suiteMode;
+    setActiveTimelineMode(currentMode);
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
     }
@@ -57,36 +67,70 @@ export function useFranchise(
 
     const url = new URL(window.location.href);
     url.searchParams.set('id', id.toString());
+    url.searchParams.set('mode', currentMode);
     window.history.replaceState({}, '', url.toString());
 
     try {
-      const result = await crawlFranchise(
-        id,
-        (loaded, total, title, currentMediaMap, currentRawEdges, rateLimitSeconds) => {
-          if (activeCrawlIdRef.current !== crawlId || controller.signal.aborted) return;
-          setProgress((prev) => ({
-            loaded,
-            total,
-            currentTitle: title ?? prev?.currentTitle ?? 'Loading node...',
-            rateLimitSeconds: rateLimitSeconds ?? null,
-          }));
-          if (currentMediaMap && currentRawEdges) {
-            setMediaMap(currentMediaMap);
-            setRawEdges(currentRawEdges);
-          }
-        },
-        60,
-        controller.signal
-      );
-
-      if (activeCrawlIdRef.current !== crawlId || controller.signal.aborted) return;
-      setMediaMap(result.mediaMap);
-      setRawEdges(result.rawEdges);
+      if (currentMode === 'movies') {
+        const result = await crawlTMDBMovieCollection(
+          id,
+          (loaded, total, title) => {
+            if (activeCrawlIdRef.current !== crawlId || controller.signal.aborted) return;
+            setProgress({
+              loaded,
+              total,
+              currentTitle: title ?? 'Loading movie...',
+            });
+          },
+          controller.signal
+        );
+        if (activeCrawlIdRef.current !== crawlId || controller.signal.aborted) return;
+        setMediaMap(result.mediaMap);
+        setRawEdges(result.rawEdges);
+      } else if (currentMode === 'shows') {
+        const result = await crawlTMDBTVUniverse(
+          id,
+          (loaded, total, title) => {
+            if (activeCrawlIdRef.current !== crawlId || controller.signal.aborted) return;
+            setProgress({
+              loaded,
+              total,
+              currentTitle: title ?? 'Loading series...',
+            });
+          },
+          controller.signal
+        );
+        if (activeCrawlIdRef.current !== crawlId || controller.signal.aborted) return;
+        setMediaMap(result.mediaMap);
+        setRawEdges(result.rawEdges);
+      } else {
+        const result = await crawlTimeline(
+          id,
+          (loaded, total, title, currentMediaMap, currentRawEdges, rateLimitSeconds) => {
+            if (activeCrawlIdRef.current !== crawlId || controller.signal.aborted) return;
+            setProgress((prev) => ({
+              loaded,
+              total,
+              currentTitle: title ?? prev?.currentTitle ?? 'Loading node...',
+              rateLimitSeconds: rateLimitSeconds ?? null,
+            }));
+            if (currentMediaMap && currentRawEdges) {
+              setMediaMap(currentMediaMap);
+              setRawEdges(currentRawEdges);
+            }
+          },
+          60,
+          controller.signal
+        );
+        if (activeCrawlIdRef.current !== crawlId || controller.signal.aborted) return;
+        setMediaMap(result.mediaMap);
+        setRawEdges(result.rawEdges);
+      }
     } catch (err: any) {
       if (err?.name === 'AbortError' || controller.signal.aborted) return;
       if (activeCrawlIdRef.current === crawlId) {
-        console.error('Failed to crawl anime data:', err);
-        setError(err?.message || 'Failed to load anime graph');
+        console.error('Failed to crawl timeline data:', err);
+        setError(err?.message || 'Failed to load timeline graph');
       }
     } finally {
       if (activeCrawlIdRef.current === crawlId && !controller.signal.aborted) {
@@ -94,9 +138,9 @@ export function useFranchise(
         setProgress(null);
       }
     }
-  }, []);
+  }, [suiteMode]);
 
-  const clearFranchise = useCallback(() => {
+  const clearTimeline = useCallback(() => {
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
       abortControllerRef.current = null;
@@ -124,7 +168,7 @@ export function useFranchise(
 
   useEffect(() => {
     if (rootMediaId) {
-      loadFranchise(rootMediaId);
+      loadTimeline(rootMediaId);
     }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -134,20 +178,27 @@ export function useFranchise(
         enhancedMediaMap: new Map<number, AnimeNodeData>(),
         nextUpIds: new Set<number>(),
         totalCompleted: 0,
-        totalInFranchise: 0,
+        totalInTimeline: 0,
       };
     }
-    return resolveWatchOrder(mediaMap, rawEdges, userEntries);
-  }, [mediaMap, rawEdges, userEntries]);
+    return resolveWatchOrder(mediaMap, rawEdges, userEntries, activeTimelineMode);
+  }, [mediaMap, rawEdges, userEntries, activeTimelineMode]);
 
   const layout = useMemo(() => {
     if (watchOrderData.enhancedMediaMap.size === 0) {
       return { nodes: [] as Node<AnimeNodeData>[], edges: [] as Edge[] };
     }
-    return buildDagreLayout(watchOrderData.enhancedMediaMap, rawEdges, filters, viewMode, theme);
-  }, [watchOrderData.enhancedMediaMap, rawEdges, filters, viewMode, theme]);
+    return buildDagreLayout(
+      watchOrderData.enhancedMediaMap,
+      rawEdges,
+      filters,
+      viewMode,
+      theme,
+      activeTimelineMode
+    );
+  }, [watchOrderData.enhancedMediaMap, rawEdges, filters, viewMode, theme, activeTimelineMode]);
 
-  const franchiseStats = useMemo<FranchiseStats | null>(() => {
+  const timelineStats = useMemo<TimelineStats | null>(() => {
     if (mediaMap.size === 0) return null;
     let totalEntries = 0;
     let completedEntries = 0;
@@ -202,11 +253,11 @@ export function useFranchise(
     error,
     nodes: layout.nodes,
     edges: layout.edges,
-    franchiseStats,
+    timelineStats,
     selectedMediaId,
     selectedMedia,
-    loadFranchise,
-    clearFranchise,
+    loadTimeline,
+    clearTimeline,
     setSelectedMediaId,
   };
 }
