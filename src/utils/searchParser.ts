@@ -1,5 +1,5 @@
 export interface ParsedSearchQuery {
-  type: 'anilist_url' | 'mal_url' | 'numeric_id' | 'text';
+  type: 'anilist_url' | 'mal_url' | 'tmdb_movie_url' | 'tmdb_tv_url' | 'numeric_id' | 'text';
   id?: number;
   idMal?: number;
   cleanText: string;
@@ -21,14 +21,9 @@ const FORMAT_SYNONYMS: Record<string, string[]> = {
   specials: ['SPECIAL'],
 };
 
-/**
- * Parses a raw search string to identify direct URLs, numeric IDs,
- * inline format filters (e.g. "type:movie", "movie"), and year filters (e.g. "year:2022", "2024").
- */
 export function parseSearchInput(rawQuery: string): ParsedSearchQuery {
   const trimmed = rawQuery.trim();
 
-  // 1. AniList URL check (e.g. https://anilist.co/anime/16498 or anilist.co/anime/16498/shingeki-no-kyojin)
   const anilistMatch = trimmed.match(/(?:https?:\/\/)?(?:www\.)?anilist\.co\/anime\/(\d+)/i);
   if (anilistMatch && anilistMatch[1]) {
     const id = parseInt(anilistMatch[1], 10);
@@ -39,7 +34,6 @@ export function parseSearchInput(rawQuery: string): ParsedSearchQuery {
     };
   }
 
-  // 2. MyAnimeList URL check (e.g. https://myanimelist.net/anime/16498/Shingeki_no_Kyojin)
   const malMatch = trimmed.match(/(?:https?:\/\/)?(?:www\.)?myanimelist\.net\/anime\/(\d+)/i);
   if (malMatch && malMatch[1]) {
     const idMal = parseInt(malMatch[1], 10);
@@ -50,7 +44,26 @@ export function parseSearchInput(rawQuery: string): ParsedSearchQuery {
     };
   }
 
-  // 3. Pure numeric ID (e.g. "16498" or "#16498")
+  const tmdbMovieMatch = trimmed.match(/(?:https?:\/\/)?(?:www\.)?themoviedb\.org\/movie\/(\d+)/i);
+  if (tmdbMovieMatch && tmdbMovieMatch[1]) {
+    const id = parseInt(tmdbMovieMatch[1], 10);
+    return {
+      type: 'tmdb_movie_url',
+      id,
+      cleanText: `#${id}`,
+    };
+  }
+
+  const tmdbTvMatch = trimmed.match(/(?:https?:\/\/)?(?:www\.)?themoviedb\.org\/tv\/(\d+)/i);
+  if (tmdbTvMatch && tmdbTvMatch[1]) {
+    const id = parseInt(tmdbTvMatch[1], 10);
+    return {
+      type: 'tmdb_tv_url',
+      id,
+      cleanText: `#${id}`,
+    };
+  }
+
   const idOnlyMatch = trimmed.match(/^#?(\d{1,7})$/);
   if (idOnlyMatch && idOnlyMatch[1]) {
     const id = parseInt(idOnlyMatch[1], 10);
@@ -61,19 +74,16 @@ export function parseSearchInput(rawQuery: string): ParsedSearchQuery {
     };
   }
 
-  // 4. Text search with possible inline modifiers
   let workingText = trimmed;
   let detectedYear: number | undefined;
   let detectedFormats: string[] | undefined;
 
-  // Check for explicit "year:YYYY" or "y:YYYY"
   const explicitYearMatch = workingText.match(/\b(?:year|y):(\d{4})\b/i);
   if (explicitYearMatch && explicitYearMatch[1]) {
     detectedYear = parseInt(explicitYearMatch[1], 10);
     workingText = workingText.replace(explicitYearMatch[0], ' ');
   }
 
-  // Check for explicit "type:format" or "format:format"
   const explicitFormatMatch = workingText.match(/\b(?:type|format):([a-z]+)\b/i);
   if (explicitFormatMatch && explicitFormatMatch[1]) {
     const key = explicitFormatMatch[1].toLowerCase();
@@ -83,7 +93,6 @@ export function parseSearchInput(rawQuery: string): ParsedSearchQuery {
     }
   }
 
-  // Check for standalone year (1970 - 2035) at word boundary if there is other text
   if (!detectedYear) {
     const standaloneYearMatch = workingText.match(/\b(19[7-9]\d|20[0-3]\d)\b/);
     if (standaloneYearMatch && standaloneYearMatch[1] && workingText.length > 5) {
@@ -93,7 +102,6 @@ export function parseSearchInput(rawQuery: string): ParsedSearchQuery {
     }
   }
 
-  // Check for common format words at end of query (e.g. "demon slayer movie" or "fate ova")
   if (!detectedFormats) {
     const tokens = workingText.split(/\s+/);
     if (tokens.length > 1) {

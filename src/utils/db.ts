@@ -1,4 +1,4 @@
-const DB_NAME = 'anipaaru_db';
+const DB_NAME = 'paaru_db';
 const STORE_NAME = 'cache';
 const DB_VERSION = 1;
 

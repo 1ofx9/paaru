@@ -1,21 +1,41 @@
 import type { AniListMedia, AnimeNodeData, UserMediaListEntry, WatchStatus } from '../types/anime';
 import type { RawEdge } from '../api/crawler';
+import type { SuiteMode } from '../types/media';
 
 export interface WatchOrderResolution {
   enhancedMediaMap: Map<number, AnimeNodeData>;
   nextUpIds: Set<number>;
   totalCompleted: number;
-  totalInFranchise: number;
+  totalInTimeline: number;
 }
 
 export function resolveWatchOrder(
   mediaMap: Map<number, AniListMedia>,
   rawEdges: RawEdge[],
-  userEntries: Map<number, UserMediaListEntry> | null
+  userEntries: Map<number, UserMediaListEntry> | null,
+  suiteMode: SuiteMode = 'anime'
 ): WatchOrderResolution {
   const enhancedMap = new Map<number, AnimeNodeData>();
+
+  if (suiteMode !== 'anime') {
+    mediaMap.forEach((media, id) => {
+      enhancedMap.set(id, {
+        ...media,
+        suiteMode,
+        isNextUp: false,
+      });
+    });
+
+    return {
+      enhancedMediaMap: enhancedMap,
+      nextUpIds: new Set<number>(),
+      totalCompleted: 0,
+      totalInTimeline: mediaMap.size,
+    };
+  }
+
   let totalCompleted = 0;
-  const totalInFranchise = mediaMap.size;
+  const totalInTimeline = mediaMap.size;
 
   const prereqMap = new Map<number, Array<{ source: number; type: string }>>();
   const outgoingMap = new Map<number, Array<{ target: number; type: string }>>();
@@ -129,6 +149,6 @@ export function resolveWatchOrder(
     enhancedMediaMap: enhancedMap,
     nextUpIds,
     totalCompleted,
-    totalInFranchise,
+    totalInTimeline,
   };
 }
