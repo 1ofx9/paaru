@@ -10,6 +10,7 @@ interface TooltipProps {
   className?: string;
   wrapperClassName?: string;
   disabled?: boolean;
+  kbd?: string;
 }
 
 export const Tooltip: React.FC<TooltipProps> = ({
@@ -21,9 +22,11 @@ export const Tooltip: React.FC<TooltipProps> = ({
   className = '',
   wrapperClassName = '',
   disabled = false,
+  kbd,
 }) => {
   const [isVisible, setIsVisible] = useState(false);
   const [coords, setCoords] = useState<{ top: number; left: number } | null>(null);
+  const [resolvedSide, setResolvedSide] = useState<'top' | 'bottom' | 'left' | 'right'>(side);
   const triggerRef = useRef<HTMLSpanElement | null>(null);
   const tooltipRef = useRef<HTMLDivElement | null>(null);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -35,7 +38,6 @@ export const Tooltip: React.FC<TooltipProps> = ({
     }
   }, []);
 
-  // Prevent tooltips on coarse pointer (touch) devices to avoid sticky popups
   const isTouchDevice = typeof window !== 'undefined' && window.matchMedia('(hover: none) and (pointer: coarse)').matches;
 
   const handleMouseEnter = useCallback(() => {
@@ -83,36 +85,42 @@ export const Tooltip: React.FC<TooltipProps> = ({
 
     let top = 0;
     let left = 0;
+    let currentSide = side;
 
     if (side === 'top') {
       top = triggerRect.top - tooltipRect.height - sideOffset;
       left = triggerRect.left + (triggerRect.width - tooltipRect.width) / 2;
       if (top < 8) {
         top = triggerRect.bottom + sideOffset;
+        currentSide = 'bottom';
       }
     } else if (side === 'bottom') {
       top = triggerRect.bottom + sideOffset;
       left = triggerRect.left + (triggerRect.width - tooltipRect.width) / 2;
       if (top + tooltipRect.height > window.innerHeight - 8) {
         top = triggerRect.top - tooltipRect.height - sideOffset;
+        currentSide = 'top';
       }
     } else if (side === 'left') {
       top = triggerRect.top + (triggerRect.height - tooltipRect.height) / 2;
       left = triggerRect.left - tooltipRect.width - sideOffset;
       if (left < 8) {
         left = triggerRect.right + sideOffset;
+        currentSide = 'right';
       }
     } else if (side === 'right') {
       top = triggerRect.top + (triggerRect.height - tooltipRect.height) / 2;
       left = triggerRect.right + sideOffset;
       if (left + tooltipRect.width > window.innerWidth - 8) {
         left = triggerRect.left - tooltipRect.width - sideOffset;
+        currentSide = 'left';
       }
     }
 
     left = Math.max(8, Math.min(window.innerWidth - tooltipRect.width - 8, left));
     top = Math.max(8, Math.min(window.innerHeight - tooltipRect.height - 8, top));
 
+    setResolvedSide(currentSide);
     setCoords({ top, left });
   }, [isVisible, side, sideOffset]);
 
@@ -135,6 +143,7 @@ export const Tooltip: React.FC<TooltipProps> = ({
           <div
             ref={tooltipRef}
             role="tooltip"
+            data-side={resolvedSide}
             style={{
               position: 'fixed',
               top: coords ? `${coords.top}px` : '-9999px',
@@ -142,9 +151,14 @@ export const Tooltip: React.FC<TooltipProps> = ({
               opacity: coords ? 1 : 0,
               zIndex: 9999,
             }}
-            className={`pointer-events-none select-none px-2.5 py-1 rounded-lg text-[11px] font-sans font-medium tracking-normal text-zinc-800 dark:text-zinc-200 bg-white/90 dark:bg-zinc-900/90 backdrop-blur-md border border-zinc-200/90 dark:border-white/10 shadow-[0_4px_16px_rgba(0,0,0,0.1)] dark:shadow-[0_8px_24px_rgba(0,0,0,0.6)] flex items-center gap-1.5 whitespace-nowrap ${className}`}
+            className={`pointer-events-none select-none px-2.5 py-1.5 rounded-lg text-[11.5px] font-sans font-medium tracking-normal text-zinc-100 bg-[#0c0c0e]/95 dark:bg-[#121216]/95 backdrop-blur-md border border-white/12 dark:border-white/15 shadow-[0_8px_24px_-4px_rgba(0,0,0,0.5)] flex items-center gap-1.5 max-w-[340px] ${className}`}
           >
-            {content}
+            <span className="truncate">{content}</span>
+            {kbd && (
+              <kbd className="ml-1 px-1.5 py-0.5 rounded bg-white/12 border border-white/20 text-[9.5px] font-mono font-medium text-zinc-300 uppercase leading-none shadow-xs">
+                {kbd}
+              </kbd>
+            )}
           </div>,
           document.body
         )}
