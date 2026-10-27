@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useReactFlow } from '@xyflow/react';
 import { ZoomIn, ZoomOut, Maximize2, Home, Share2, Check, LayoutGrid, Columns } from 'lucide-react';
 import type { ViewMode } from '../types/anime';
+import type { SuiteMode } from '../types/media';
 import { Tooltip } from './Tooltip';
 
 interface CanvasControlsProps {
@@ -10,6 +11,7 @@ interface CanvasControlsProps {
   onResetToEmpty?: () => void;
   viewMode: ViewMode;
   onToggleViewMode: () => void;
+  suiteMode?: SuiteMode;
 }
 
 export const CanvasControls: React.FC<CanvasControlsProps> = ({
@@ -18,6 +20,7 @@ export const CanvasControls: React.FC<CanvasControlsProps> = ({
   onResetToEmpty,
   viewMode,
   onToggleViewMode,
+  suiteMode = 'anime',
 }) => {
   const { zoomIn, zoomOut, fitView } = useReactFlow();
   const [copied, setCopied] = useState(false);
@@ -29,65 +32,65 @@ export const CanvasControls: React.FC<CanvasControlsProps> = ({
   };
 
   return (
-    <div className="fixed bottom-4 sm:bottom-6 right-4 sm:right-6 bottom-[max(1rem,env(safe-area-inset-bottom))] z-30 flex items-center gap-1 sm:gap-1.5 p-1 sm:p-1.5 bg-[#fafafc]/90 dark:bg-zinc-950/60 backdrop-blur-md border border-zinc-200/80 dark:border-white/10 rounded-full shadow-[0_8px_30px_rgba(0,0,0,0.08)] dark:shadow-2xl pointer-events-auto transition-colors">
+    <div className="fixed bottom-4 sm:bottom-6 right-4 sm:right-6 bottom-[max(1rem,env(safe-area-inset-bottom))] z-30 flex items-center gap-1.5 sm:gap-2 p-1.5 sm:p-2 bg-white/95 dark:bg-zinc-950/70 backdrop-blur-md border border-zinc-200/90 dark:border-white/10 rounded-full shadow-[0_4px_24px_rgba(0,0,0,0.06)] dark:shadow-2xl pointer-events-auto transition-colors">
       {onResetToEmpty && (
         <div className="hidden sm:flex sm:items-center">
-          <Tooltip content="Back to search">
+          <Tooltip content="Back to search" kbd="Esc">
             <button
               onClick={onResetToEmpty}
-              className="w-8.5 h-8.5 rounded-full bg-transparent hover:bg-black/5 dark:hover:bg-white/8 text-zinc-600 dark:text-zinc-300 hover:text-zinc-950 dark:hover:text-white flex items-center justify-center transition-colors cursor-pointer"
+              className="w-9.5 h-9.5 rounded-full bg-transparent hover:bg-black/5 dark:hover:bg-white/8 text-zinc-600 dark:text-zinc-300 hover:text-zinc-950 dark:hover:text-white flex items-center justify-center transition-colors cursor-pointer"
             >
-              <Home className="w-4 h-4" />
+              <Home className="w-4.5 h-4.5" />
             </button>
           </Tooltip>
-          <div className="w-px h-4 bg-zinc-200 dark:bg-white/10 mx-0.5" />
+          <div className="w-px h-5 bg-zinc-200 dark:bg-white/10 mx-0.5" />
         </div>
       )}
 
-      <Tooltip content={viewMode === 'compact' ? 'Detailed View' : 'Compact View'}>
+      <Tooltip content={viewMode === 'compact' ? 'Detailed View' : 'Poster View'}>
         <button
           onClick={onToggleViewMode}
-          className={`w-8 h-8 sm:w-8.5 sm:h-8.5 rounded-full flex items-center justify-center transition-colors cursor-pointer ${
+          className={`w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center transition-colors cursor-pointer ${
             viewMode === 'compact'
-              ? 'bg-[#8b5cf6]/10 text-[#7c3aed] dark:bg-white/15 dark:text-white'
+              ? 'bg-zinc-900 text-white dark:bg-white dark:text-zinc-950 shadow-xs'
               : 'bg-transparent hover:bg-black/5 dark:hover:bg-white/8 text-zinc-600 dark:text-zinc-300 hover:text-zinc-950 dark:hover:text-white'
           }`}
         >
-          {viewMode === 'compact' ? <Columns className="w-4 h-4" /> : <LayoutGrid className="w-4 h-4" />}
+          {viewMode === 'compact' ? <Columns className="w-4.5 h-4.5" /> : <LayoutGrid className="w-4.5 h-4.5" />}
         </button>
       </Tooltip>
 
       <Tooltip content={copied ? 'Link Copied!' : 'Share Timeline'}>
         <button
           onClick={handleShare}
-          className="w-8 h-8 sm:w-8.5 sm:h-8.5 rounded-full bg-transparent hover:bg-black/5 dark:hover:bg-white/8 text-zinc-600 dark:text-zinc-300 hover:text-zinc-950 dark:hover:text-white flex items-center justify-center transition-colors cursor-pointer relative"
+          className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-transparent hover:bg-black/5 dark:hover:bg-white/8 text-zinc-600 dark:text-zinc-300 hover:text-zinc-950 dark:hover:text-white flex items-center justify-center transition-colors cursor-pointer relative"
         >
           {copied ? (
-            <Check className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+            <Check className="w-4.5 h-4.5 text-emerald-600 dark:text-emerald-400" />
           ) : (
-            <Share2 className="w-4 h-4" />
+            <Share2 className="w-4.5 h-4.5" />
           )}
         </button>
       </Tooltip>
 
-      <div className="hidden sm:block w-px h-4 bg-zinc-200 dark:bg-white/10 mx-0.5" />
+      <div className="hidden sm:block w-px h-5 bg-zinc-200 dark:bg-white/10 mx-0.5" />
 
       <div className="hidden sm:contents">
         <Tooltip content="Zoom In">
           <button
             onClick={() => zoomIn({ duration: 250 })}
-            className="w-8.5 h-8.5 rounded-full bg-transparent hover:bg-black/5 dark:hover:bg-white/8 text-zinc-600 dark:text-zinc-300 hover:text-zinc-950 dark:hover:text-white flex items-center justify-center transition-colors cursor-pointer"
+            className="w-9.5 h-9.5 rounded-full bg-transparent hover:bg-black/5 dark:hover:bg-white/8 text-zinc-600 dark:text-zinc-300 hover:text-zinc-950 dark:hover:text-white flex items-center justify-center transition-colors cursor-pointer"
           >
-            <ZoomIn className="w-4 h-4" />
+            <ZoomIn className="w-4.5 h-4.5" />
           </button>
         </Tooltip>
 
         <Tooltip content="Zoom Out">
           <button
             onClick={() => zoomOut({ duration: 250 })}
-            className="w-8.5 h-8.5 rounded-full bg-transparent hover:bg-black/5 dark:hover:bg-white/8 text-zinc-600 dark:text-zinc-300 hover:text-zinc-950 dark:hover:text-white flex items-center justify-center transition-colors cursor-pointer"
+            className="w-9.5 h-9.5 rounded-full bg-transparent hover:bg-black/5 dark:hover:bg-white/8 text-zinc-600 dark:text-zinc-300 hover:text-zinc-950 dark:hover:text-white flex items-center justify-center transition-colors cursor-pointer"
           >
-            <ZoomOut className="w-4 h-4" />
+            <ZoomOut className="w-4.5 h-4.5" />
           </button>
         </Tooltip>
       </div>
@@ -95,13 +98,13 @@ export const CanvasControls: React.FC<CanvasControlsProps> = ({
       <Tooltip content="Fit View">
         <button
           onClick={() => fitView({ padding: 0.12, minZoom: 0.65, maxZoom: 1.25, duration: 350 })}
-          className="w-8 h-8 sm:w-8.5 sm:h-8.5 rounded-full bg-transparent hover:bg-black/5 dark:hover:bg-white/8 text-zinc-600 dark:text-zinc-300 hover:text-zinc-950 dark:hover:text-white flex items-center justify-center transition-colors cursor-pointer"
+          className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-transparent hover:bg-black/5 dark:hover:bg-white/8 text-zinc-600 dark:text-zinc-300 hover:text-zinc-950 dark:hover:text-white flex items-center justify-center transition-colors cursor-pointer"
         >
-          <Maximize2 className="w-4 h-4" />
+          <Maximize2 className="w-4.5 h-4.5" />
         </button>
       </Tooltip>
 
-      {hasNextUp && onCenterNextUp && (
+      {suiteMode === 'anime' && hasNextUp && onCenterNextUp && (
         <Tooltip content="Jump to Next Up">
           <button
             onClick={onCenterNextUp}

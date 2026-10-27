@@ -98,14 +98,22 @@ export const AnimeEdge = memo(({
 
   const edgeStyle = {
     ...style,
-    opacity: isDimmed ? 0.2 : isHighlighted ? 1 : style?.opacity,
-    strokeWidth: isHighlighted ? ((style?.strokeWidth as number) || 2) + 1.5 : style?.strokeWidth,
-    stroke: isHighlighted
-      ? isSequel
-        ? '#8b5cf6'
-        : (theme === 'light' ? '#7c3aed' : '#c4b5fd')
-      : style?.stroke,
-    transition: 'all 0.2s ease',
+    opacity: isDimmed ? 0.15 : isHighlighted ? 1 : style?.opacity,
+    strokeWidth: isHighlighted ? ((style?.strokeWidth as number) || 2) + 1.25 : style?.strokeWidth,
+    filter: isHighlighted
+      ? theme === 'dark'
+        ? isSequel
+          ? 'drop-shadow(0 0 5px rgba(196,181,253,0.75))'
+          : isSpinOff
+          ? 'drop-shadow(0 0 5px rgba(167,243,208,0.75))'
+          : 'drop-shadow(0 0 5px rgba(254,215,170,0.75))'
+        : isSequel
+        ? 'drop-shadow(0 0 4px rgba(124,58,237,0.5))'
+        : isSpinOff
+        ? 'drop-shadow(0 0 4px rgba(5,150,105,0.5))'
+        : 'drop-shadow(0 0 4px rgba(234,88,12,0.5))'
+      : undefined,
+    transition: 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
   };
 
   return (
