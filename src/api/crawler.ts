@@ -33,7 +33,7 @@ export type CrawlProgressCallback = (
   rateLimitSeconds?: number | null
 ) => void;
 
-export async function crawlFranchise(
+export async function crawlTimeline(
   rootMediaId: number,
   onProgress?: CrawlProgressCallback,
   maxNodes = 60,

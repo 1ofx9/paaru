@@ -4,7 +4,7 @@ import { parseSearchInput } from '../utils/searchParser';
 
 const ANILIST_GRAPHQL_ENDPOINT = 'https://graphql.anilist.co';
 
-const CACHE_PREFIX = 'anipaaru_cache_';
+const CACHE_PREFIX = 'paaru_cache_';
 const CACHE_TTL_MS = 1000 * 60 * 60 * 12;
 
 const memoryCache = new Map<string, { timestamp: number; data: any }>();
@@ -80,7 +80,7 @@ async function queryAniList<T>(
       delaySeconds = Math.max(1, parseInt(retryAfter, 10));
     }
 
-    console.warn(`[AniPaaru] AniList API rate limit hit (HTTP 429). Retrying after ${delaySeconds}s...`);
+    console.warn(`[Paaru] AniList API rate limit hit (HTTP 429). Retrying after ${delaySeconds}s...`);
 
     for (let s = delaySeconds; s > 0; s--) {
       onRateLimit?.(s);
@@ -103,7 +103,7 @@ async function queryAniList<T>(
   return json.data as T;
 }
 
-const FRANCHISE_MEDIA_FIELDS = `
+const MEDIA_CORE_FIELDS = `
     id
     idMal
     siteUrl
@@ -168,11 +168,11 @@ const FRANCHISE_MEDIA_FIELDS = `
     }
 `;
 
-const FRANCHISE_BATCH_QUERY = `
-query GetFranchiseBatch($ids: [Int], $perPage: Int = 25) {
+const BATCH_MEDIA_QUERY = `
+query GetBatchMedia($ids: [Int], $perPage: Int = 25) {
   Page(page: 1, perPage: $perPage) {
     media(id_in: $ids, type: ANIME) {
-${FRANCHISE_MEDIA_FIELDS}
+${MEDIA_CORE_FIELDS}
     }
   }
 }
@@ -274,7 +274,7 @@ export async function fetchAniListMediaBatch(
   }
 
   const data = await queryAniList<{ Page: { media: AniListMedia[] } }>(
-    FRANCHISE_BATCH_QUERY,
+    BATCH_MEDIA_QUERY,
     { ids: missingIds, perPage: missingIds.length },
     signal,
     onRateLimit

@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import type { AniListUser, UserMediaListEntry } from '../types/anime';
 import { fetchUserWatchList } from '../api/anilist';
 
-const LOCAL_STORAGE_USER_KEY = 'anipaaru_anilist_user';
+const LOCAL_STORAGE_USER_KEY = 'paaru_anilist_user';
 
 export function useAniListUser() {
   const [userName, setUserNameState] = useState<string>(() => {
