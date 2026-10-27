@@ -1,3 +1,5 @@
+import type { SuiteMode } from './media';
+
 export type RelationType = 
   | 'SEQUEL'
   | 'PREQUEL'
@@ -121,7 +123,7 @@ export interface SearchHistoryItem {
   seasonYear?: number | null;
 }
 
-export interface FranchiseStats {
+export interface TimelineStats {
   totalEntries: number;
   completedEntries: number;
   totalEpisodes: number;
@@ -133,11 +135,15 @@ export interface FranchiseStats {
 
 export interface AnimeNodeData extends AniListMedia {
   [key: string]: unknown;
+  suiteMode?: SuiteMode;
   watchStatus?: WatchStatus;
   userProgress?: number;
   userScore?: number;
   isNextUp?: boolean;
   viewMode?: ViewMode;
+  isInPath?: boolean;
+  isDirectHover?: boolean;
+  isDimmed?: boolean;
 }
 
 export interface GraphFilterOptions {
@@ -145,4 +151,6 @@ export interface GraphFilterOptions {
   hideSpinOffs: boolean;
   unwatchedOnly: boolean;
   orderMode: 'release' | 'chronological';
+  hideSpecials?: boolean;
+  releasedOnly?: boolean;
 }
