@@ -2,9 +2,11 @@ import { useState, useEffect, useCallback } from 'react';
 
 export type Theme = 'dark' | 'light';
 
+const THEME_KEY = 'paaru_theme';
+
 export function useTheme() {
   const [theme, setTheme] = useState<Theme>(() => {
-    const saved = localStorage.getItem('anipaaru_theme');
+    const saved = localStorage.getItem(THEME_KEY);
     if (saved === 'dark' || saved === 'light') {
       return saved;
     }
@@ -20,7 +22,7 @@ export function useTheme() {
       root.classList.add('light');
       root.classList.remove('dark');
     }
-    localStorage.setItem('anipaaru_theme', theme);
+    localStorage.setItem(THEME_KEY, theme);
   }, [theme]);
 
   const toggleTheme = useCallback(() => {

@@ -1,11 +1,19 @@
 @import "tailwindcss";
 @import "@xyflow/react/dist/style.css";
 
+@theme {
+  --font-sans: 'Geist', 'Inter', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-heading: 'Plus Jakarta Sans', 'Geist', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-editorial: 'Instrument Serif', Georgia, serif;
+  --font-tech: 'Space Grotesk', system-ui, -apple-system, sans-serif;
+  --font-mono: 'Space Mono', 'Geist Mono', 'JetBrains Mono', ui-monospace, monospace;
+}
+
 @custom-variant dark (&:where(.dark, .dark *));
 
 @layer base {
   :root {
-    --background: #ebebee;
+    --background: #f6f7f9;
     --foreground: #18181b;
     color-scheme: light;
   }
@@ -19,7 +27,10 @@
   body {
     background-color: var(--background);
     color: var(--foreground);
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    font-family: var(--font-sans);
+    letter-spacing: -0.011em;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
     overflow: hidden;
     margin: 0;
     padding: 0;
@@ -27,18 +38,24 @@
     -webkit-tap-highlight-color: transparent;
     transition: background-color 0.2s ease, color 0.2s ease;
   }
+
+  h1, h2, h3, h4, h5, h6, .font-heading {
+    font-family: var(--font-heading);
+    letter-spacing: -0.026em;
+    text-wrap: balance;
+  }
 }
 
+.react-flow,
+.react-flow.dark,
+.react-flow__pane,
+.react-flow__viewport,
+.react-flow__renderer,
 .canvas-bg-dots {
-  background-color: #ebebee;
-  background-image: radial-gradient(rgba(0, 0, 0, 0.05) 1px, transparent 1px);
-  background-size: 20px 20px;
-}
-
-.dark .canvas-bg-dots {
-  background-color: #09090b;
-  background-image: radial-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px);
-  background-size: 20px 20px;
+  background: transparent !important;
+  background-color: transparent !important;
+  --xy-background-color: transparent !important;
+  --xy-background-color-default: transparent !important;
 }
 
 .react-flow__background {
