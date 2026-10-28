@@ -13,26 +13,10 @@ export function resolveWatchOrder(
   mediaMap: Map<number, AniListMedia>,
   rawEdges: RawEdge[],
   userEntries: Map<number, UserMediaListEntry> | null,
-  suiteMode: SuiteMode = 'anime'
+  suiteMode: SuiteMode = 'anime',
+  rootMediaId?: number | null
 ): WatchOrderResolution {
   const enhancedMap = new Map<number, AnimeNodeData>();
-
-  if (suiteMode !== 'anime') {
-    mediaMap.forEach((media, id) => {
-      enhancedMap.set(id, {
-        ...media,
-        suiteMode,
-        isNextUp: false,
-      });
-    });
-
-    return {
-      enhancedMediaMap: enhancedMap,
-      nextUpIds: new Set<number>(),
-      totalCompleted: 0,
-      totalInTimeline: mediaMap.size,
-    };
-  }
 
   let totalCompleted = 0;
   const totalInTimeline = mediaMap.size;
@@ -57,7 +41,7 @@ export function resolveWatchOrder(
     let userProgress: number | undefined;
     let userScore: number | undefined;
 
-    if (userEntries && userEntries.has(id)) {
+    if (suiteMode === 'anime' && userEntries && userEntries.has(id)) {
       const entry = userEntries.get(id)!;
       watchStatus = entry.status as WatchStatus;
       userProgress = entry.progress;
@@ -70,6 +54,7 @@ export function resolveWatchOrder(
 
     enhancedMap.set(id, {
       ...media,
+      suiteMode,
       watchStatus,
       userProgress,
       userScore,
@@ -80,33 +65,70 @@ export function resolveWatchOrder(
   const nextUpIds = new Set<number>();
 
   if (totalCompleted === 0) {
-    const incomingSequelCounts = new Map<number, number>();
-    mediaMap.forEach((_, id) => incomingSequelCounts.set(id, 0));
+    let startingId: number | null = null;
 
-    rawEdges.forEach((edge) => {
-      if (edge.type === 'SEQUEL') {
-        incomingSequelCounts.set(edge.target, (incomingSequelCounts.get(edge.target) || 0) + 1);
-      }
-    });
-
-    let bestRootId: number | null = null;
-    let earliestYear = 9999;
-
-    mediaMap.forEach((media, id) => {
-      const incoming = incomingSequelCounts.get(id) || 0;
-      if (incoming === 0) {
-        const year = media.seasonYear || 9999;
-        const isTv = media.format === 'TV';
-        if (bestRootId === null || (isTv && year <= earliestYear) || year < earliestYear) {
-          bestRootId = id;
-          earliestYear = year;
+    // If a searched root exists in the timeline, trace back to its earliest true TV/Movie prequel
+    if (rootMediaId && mediaMap.has(rootMediaId)) {
+      let curr = rootMediaId;
+      const visitedBack = new Set<number>([curr]);
+      while (true) {
+        const currMedia = mediaMap.get(curr);
+        const currYear = currMedia?.seasonYear || (currMedia as any)?.startDate?.year || 9999;
+        const inSequels = (prereqMap.get(curr) || []).filter(
+          (p) => p.type === 'SEQUEL' && !visitedBack.has(p.source)
+        );
+        const earlierPred = inSequels.find((p) => {
+          const pMedia = mediaMap.get(p.source);
+          const pYear = pMedia?.seasonYear || (pMedia as any)?.startDate?.year || 9999;
+          return pYear <= currYear && (pMedia?.format === 'TV' || pMedia?.format === 'MOVIE');
+        });
+        if (earlierPred) {
+          visitedBack.add(earlierPred.source);
+          curr = earlierPred.source;
+        } else {
+          break;
         }
       }
-    });
+      startingId = curr;
+    }
 
-    if (bestRootId !== null) {
-      nextUpIds.add(bestRootId);
-      const node = enhancedMap.get(bestRootId);
+    if (!startingId) {
+      const incomingSequelCounts = new Map<number, number>();
+      mediaMap.forEach((_, id) => incomingSequelCounts.set(id, 0));
+
+      rawEdges.forEach((edge) => {
+        if (edge.type === 'SEQUEL') {
+          incomingSequelCounts.set(edge.target, (incomingSequelCounts.get(edge.target) || 0) + 1);
+        }
+      });
+
+      const candidates = Array.from(mediaMap.values()).filter(
+        (m) => (incomingSequelCounts.get(m.id) || 0) === 0
+      );
+
+      const tvCandidates = candidates.filter((m) => m.format === 'TV');
+      const movieCandidates = candidates.filter((m) => m.format === 'MOVIE');
+      const eligible =
+        tvCandidates.length > 0
+          ? tvCandidates
+          : movieCandidates.length > 0
+          ? movieCandidates
+          : candidates;
+
+      eligible.sort((a, b) => {
+        const yA = a.seasonYear || (a as any).startDate?.year || 9999;
+        const yB = b.seasonYear || (b as any).startDate?.year || 9999;
+        return yA - yB;
+      });
+
+      if (eligible.length > 0) {
+        startingId = eligible[0].id;
+      }
+    }
+
+    if (startingId !== null) {
+      nextUpIds.add(startingId);
+      const node = enhancedMap.get(startingId);
       if (node && node.watchStatus !== 'CURRENT') {
         node.isNextUp = true;
       }
