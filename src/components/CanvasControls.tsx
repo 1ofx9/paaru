@@ -32,7 +32,7 @@ export const CanvasControls: React.FC<CanvasControlsProps> = ({
   };
 
   return (
-    <div className="fixed bottom-4 sm:bottom-6 right-4 sm:right-6 bottom-[max(1rem,env(safe-area-inset-bottom))] z-30 flex items-center gap-1.5 sm:gap-2 p-1.5 sm:p-2 bg-white/95 dark:bg-zinc-950/70 backdrop-blur-md border border-zinc-200/90 dark:border-white/10 rounded-full shadow-[0_4px_24px_rgba(0,0,0,0.06)] dark:shadow-2xl pointer-events-auto transition-colors">
+    <div className="fixed bottom-[max(1rem,env(safe-area-inset-bottom))] sm:bottom-6 right-4 sm:right-6 z-30 flex items-center gap-1.5 sm:gap-2 p-1.5 sm:p-2 bg-white/95 dark:bg-zinc-950/70 backdrop-blur-md border border-zinc-200/90 dark:border-white/10 rounded-full shadow-[0_4px_24px_rgba(0,0,0,0.06)] dark:shadow-2xl pointer-events-auto transition-colors">
       {onResetToEmpty && (
         <div className="hidden sm:flex sm:items-center">
           <Tooltip content="Back to search" kbd="Esc">

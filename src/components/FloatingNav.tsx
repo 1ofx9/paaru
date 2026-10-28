@@ -181,8 +181,12 @@ export const FloatingNav: React.FC<FloatingNavProps> = ({
   };
 
   const handleSelectMediaItem = (item: SearchHistoryItem) => {
-    addToRecents(item);
-    onSelectTimeline(item.id, suiteMode);
+    const itemMode = item.mode || suiteMode;
+    addToRecents({ ...item, mode: itemMode });
+    if (itemMode !== suiteMode) {
+      onSelectSuiteMode(itemMode);
+    }
+    onSelectTimeline(item.id, itemMode);
     setSearchQuery('');
     setSearchResults([]);
     setIsSearchFocused(false);
@@ -262,7 +266,7 @@ export const FloatingNav: React.FC<FloatingNavProps> = ({
     const parsed = parseSearchInput(trimmed);
     const isDirect = parsed.type === 'anilist_url' || parsed.type === 'numeric_id' || parsed.type === 'mal_url';
 
-    const cacheKey = JSON.stringify(parsed);
+    const cacheKey = `${suiteMode}_${JSON.stringify(parsed)}`;
     if (searchCacheRef.current.has(cacheKey)) {
       setSearchResults(searchCacheRef.current.get(cacheKey)!);
       setIsSearching(false);
@@ -281,6 +285,13 @@ export const FloatingNav: React.FC<FloatingNavProps> = ({
 
     const timeout = setTimeout(async () => {
       try {
+        if (parsed.type === 'anilist_url' && parsed.id) {
+          if (suiteMode !== 'anime') onSelectSuiteMode('anime');
+          onSelectTimeline(parsed.id, 'anime');
+          setSearchQuery('');
+          setIsSearching(false);
+          return;
+        }
         if (parsed.type === 'tmdb_movie_url' && parsed.id) {
           if (suiteMode !== 'movies') onSelectSuiteMode('movies');
           onSelectTimeline(parsed.id, 'movies');
@@ -439,6 +450,7 @@ export const FloatingNav: React.FC<FloatingNavProps> = ({
             coverImage: target.media.coverImage?.medium || target.media.coverImage?.large,
             format: target.media.format,
             seasonYear: target.media.seasonYear,
+            mode: suiteMode,
           });
         }
       }
@@ -1508,7 +1520,7 @@ export const FloatingNav: React.FC<FloatingNavProps> = ({
                             {inGraphMatches.length > 0 && (
                               <div className="px-2.5 py-1 text-[10px] font-semibold text-zinc-400 dark:text-zinc-500 font-mono uppercase tracking-wider flex items-center gap-1.5">
                                 <Search className="w-3 h-3" />
-                                All Anime
+                                {suiteMode === 'movies' ? 'Movies' : suiteMode === 'shows' ? 'TV Shows' : 'All Anime'}
                               </div>
                             )}
                             <div className="space-y-0.5 mt-0.5">
@@ -1536,6 +1548,7 @@ export const FloatingNav: React.FC<FloatingNavProps> = ({
                                         coverImage: item.coverImage?.large || item.coverImage?.medium,
                                         format: item.format,
                                         seasonYear: item.seasonYear,
+                                        mode: suiteMode,
                                       });
                                     }}
                                     className={`p-2.5 sm:p-3 rounded-2xl cursor-pointer flex items-center gap-3 sm:gap-3.5 transition-colors ${
