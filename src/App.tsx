@@ -61,7 +61,22 @@ function CanvasView({
   suiteMode,
 }: CanvasViewProps) {
   const [hoveredNodeId, setHoveredNodeId] = useState<number | null>(null);
+  const hoverRafRef = useRef<number | null>(null);
   const { fitView, setCenter } = useReactFlow();
+
+  const handleNodeMouseEnter: NodeMouseHandler = useCallback((_, node) => {
+    if (hoverRafRef.current) cancelAnimationFrame(hoverRafRef.current);
+    hoverRafRef.current = requestAnimationFrame(() => {
+      setHoveredNodeId(parseInt(node.id, 10));
+    });
+  }, []);
+
+  const handleNodeMouseLeave = useCallback(() => {
+    if (hoverRafRef.current) cancelAnimationFrame(hoverRafRef.current);
+    hoverRafRef.current = requestAnimationFrame(() => {
+      setHoveredNodeId(null);
+    });
+  }, []);
 
   const nodeOffsetX = viewMode === 'compact' ? 40 : 130;
   const nodeOffsetY = viewMode === 'compact' ? 60 : 43;
@@ -239,10 +254,11 @@ function CanvasView({
           nodeTypes={nodeTypes}
           edgeTypes={edgeTypes}
           onNodeClick={onNodeClick}
-          onNodeMouseEnter={(_, node) => setHoveredNodeId(parseInt(node.id, 10))}
-          onNodeMouseLeave={() => setHoveredNodeId(null)}
+          onNodeMouseEnter={handleNodeMouseEnter}
+          onNodeMouseLeave={handleNodeMouseLeave}
           onPaneClick={() => {
             onSelectNode(0);
+            if (hoverRafRef.current) cancelAnimationFrame(hoverRafRef.current);
             setHoveredNodeId(null);
           }}
           fitView
@@ -455,7 +471,14 @@ export default function App() {
         hasActiveAnime={Boolean(rootMediaId)}
         theme={theme}
         onToggleTheme={toggleTheme}
-        onSelectTimeline={(id, mode) => loadTimeline(id, mode || suiteMode)}
+        onSelectTimeline={(id, mode) => {
+          const targetMode = mode || suiteMode;
+          if (targetMode !== suiteMode) {
+            setSuiteMode(targetMode);
+            setViewMode(getInitialViewMode(targetMode));
+          }
+          loadTimeline(id, targetMode);
+        }}
         onClearTimeline={clearTimeline}
         nodes={nodes}
         userEntries={userEntries}

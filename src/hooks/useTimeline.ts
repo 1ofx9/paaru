@@ -106,7 +106,7 @@ export function useTimeline(
       } else {
         const result = await crawlTimeline(
           id,
-          (loaded, total, title, currentMediaMap, currentRawEdges, rateLimitSeconds) => {
+          (loaded, total, title, _currentMediaMap, _currentRawEdges, rateLimitSeconds) => {
             if (activeCrawlIdRef.current !== crawlId || controller.signal.aborted) return;
             setProgress((prev) => ({
               loaded,
@@ -114,10 +114,6 @@ export function useTimeline(
               currentTitle: title ?? prev?.currentTitle ?? 'Loading node...',
               rateLimitSeconds: rateLimitSeconds ?? null,
             }));
-            if (currentMediaMap && currentRawEdges) {
-              setMediaMap(currentMediaMap);
-              setRawEdges(currentRawEdges);
-            }
           },
           60,
           controller.signal
@@ -168,7 +164,9 @@ export function useTimeline(
 
   useEffect(() => {
     if (rootMediaId) {
-      loadTimeline(rootMediaId);
+      const urlParams = new URLSearchParams(window.location.search);
+      const modeParam = urlParams.get('mode') as SuiteMode | null;
+      loadTimeline(rootMediaId, modeParam || suiteMode);
     }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -181,8 +179,8 @@ export function useTimeline(
         totalInTimeline: 0,
       };
     }
-    return resolveWatchOrder(mediaMap, rawEdges, userEntries, activeTimelineMode);
-  }, [mediaMap, rawEdges, userEntries, activeTimelineMode]);
+    return resolveWatchOrder(mediaMap, rawEdges, userEntries, activeTimelineMode, rootMediaId);
+  }, [mediaMap, rawEdges, userEntries, activeTimelineMode, rootMediaId]);
 
   const layout = useMemo(() => {
     if (watchOrderData.enhancedMediaMap.size === 0) {
@@ -194,9 +192,10 @@ export function useTimeline(
       filters,
       viewMode,
       theme,
-      activeTimelineMode
+      activeTimelineMode,
+      rootMediaId
     );
-  }, [watchOrderData.enhancedMediaMap, rawEdges, filters, viewMode, theme, activeTimelineMode]);
+  }, [watchOrderData.enhancedMediaMap, rawEdges, filters, viewMode, theme, activeTimelineMode, rootMediaId]);
 
   const timelineStats = useMemo<TimelineStats | null>(() => {
     if (mediaMap.size === 0) return null;
