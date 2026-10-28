@@ -716,7 +716,7 @@ export const FloatingNav: React.FC<FloatingNavProps> = ({
                       setIsSearchFocused(false);
                     }
                   }}
-                  className={`relative w-8.5 h-8.5 sm:w-9 sm:h-9 rounded-full border text-xs font-medium flex items-center justify-center transition-all cursor-pointer active:scale-95 ${
+                  className={`relative w-8 h-8 sm:w-9 sm:h-9 rounded-full border text-xs font-medium flex items-center justify-center transition-all cursor-pointer active:scale-95 shrink-0 ${
                     hasActiveFilters
                       ? 'bg-zinc-900 text-white border-zinc-900 dark:bg-white dark:text-zinc-950 dark:border-white shadow-xs'
                       : 'bg-transparent border-transparent text-zinc-600 dark:text-zinc-400 hover:text-zinc-950 dark:hover:text-zinc-200 hover:bg-black/5 dark:hover:bg-white/6'
@@ -999,7 +999,7 @@ export const FloatingNav: React.FC<FloatingNavProps> = ({
                           onClearUserError?.();
                         }
                       }}
-                      className={`w-8.5 h-8.5 sm:w-9 sm:h-9 rounded-full border overflow-hidden flex items-center justify-center transition-all cursor-pointer active:scale-95 ${
+                      className={`w-8 h-8 sm:w-9 sm:h-9 rounded-full border overflow-hidden flex items-center justify-center transition-all cursor-pointer active:scale-95 shrink-0 ${
                         isUserModalOpen
                           ? 'border-zinc-900 dark:border-white ring-2 ring-zinc-900/15 dark:ring-white/20 shadow-xs'
                           : 'border-zinc-200/90 dark:border-white/10 hover:border-zinc-400 dark:hover:border-white/30'
@@ -1030,7 +1030,7 @@ export const FloatingNav: React.FC<FloatingNavProps> = ({
                           onClearUserError?.();
                         }
                       }}
-                      className={`w-8.5 h-8.5 sm:w-9 sm:h-9 rounded-full border text-xs font-medium flex items-center justify-center transition-all cursor-pointer active:scale-95 ${
+                      className={`w-8 h-8 sm:w-9 sm:h-9 rounded-full border text-xs font-medium flex items-center justify-center transition-all cursor-pointer active:scale-95 shrink-0 ${
                         isUserModalOpen
                           ? 'bg-zinc-900 text-white border-zinc-900 dark:bg-white dark:text-zinc-950 dark:border-white shadow-xs'
                           : 'bg-transparent border-transparent text-zinc-600 dark:text-zinc-400 hover:text-zinc-950 dark:hover:text-zinc-200 hover:bg-black/5 dark:hover:bg-white/6'
@@ -1189,7 +1189,7 @@ export const FloatingNav: React.FC<FloatingNavProps> = ({
                         setTmdbKeySaved(false);
                       }
                     }}
-                    className={`relative w-8.5 h-8.5 sm:w-9 sm:h-9 rounded-full border text-xs font-medium flex items-center justify-center transition-all cursor-pointer active:scale-95 ${
+                    className={`relative w-8 h-8 sm:w-9 sm:h-9 rounded-full border text-xs font-medium flex items-center justify-center transition-all cursor-pointer active:scale-95 shrink-0 ${
                       isTMDBKeyModalOpen
                         ? 'bg-zinc-900 text-white border-zinc-900 dark:bg-white dark:text-zinc-950 dark:border-white shadow-xs'
                         : !hasTMDBKey()
@@ -1304,21 +1304,21 @@ export const FloatingNav: React.FC<FloatingNavProps> = ({
               </div>
             )}
 
-            <div className="hidden sm:block">
-              <Tooltip content={theme === 'dark' ? 'Light Mode' : 'Dark Mode'} side="bottom">
-                <button
-                  onClick={onToggleTheme}
-                  className="w-8.5 h-8.5 sm:w-9 sm:h-9 rounded-full bg-transparent hover:bg-black/5 dark:hover:bg-white/6 text-zinc-600 dark:text-zinc-400 hover:text-zinc-950 dark:hover:text-zinc-200 flex items-center justify-center transition-all cursor-pointer active:scale-95"
-                >
-                  {theme === 'dark' ? <Sun className="w-4 h-4 sm:w-4.5 sm:h-4.5" /> : <Moon className="w-4 h-4 sm:w-4.5 sm:h-4.5" />}
-                </button>
-              </Tooltip>
-            </div>
+            <Tooltip content={theme === 'dark' ? 'Light Mode' : 'Dark Mode'} side="bottom">
+              <button
+                type="button"
+                onClick={onToggleTheme}
+                aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+                className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-transparent hover:bg-black/5 dark:hover:bg-white/6 text-zinc-600 dark:text-zinc-400 hover:text-zinc-950 dark:hover:text-zinc-200 flex items-center justify-center transition-all cursor-pointer active:scale-95 shrink-0"
+              >
+                {theme === 'dark' ? <Sun className="w-4 h-4 sm:w-4.5 sm:h-4.5" /> : <Moon className="w-4 h-4 sm:w-4.5 sm:h-4.5" />}
+              </button>
+            </Tooltip>
 
             <Tooltip content="Legend & Guide" kbd="?" side="bottom">
               <button
                 onClick={onOpenLegend}
-                className="w-8.5 h-8.5 sm:w-9 sm:h-9 rounded-full bg-transparent hover:bg-black/5 dark:hover:bg-white/6 text-zinc-600 dark:text-zinc-400 hover:text-zinc-950 dark:hover:text-zinc-200 flex items-center justify-center transition-all cursor-pointer active:scale-95"
+                className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-transparent hover:bg-black/5 dark:hover:bg-white/6 text-zinc-600 dark:text-zinc-400 hover:text-zinc-950 dark:hover:text-zinc-200 flex items-center justify-center transition-all cursor-pointer active:scale-95 shrink-0"
               >
                 <HelpCircle className="w-4 h-4 sm:w-4.5 sm:h-4.5" />
               </button>
