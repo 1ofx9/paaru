@@ -22,7 +22,7 @@ const ALLOWED_RELATIONS: RelationType[] = [
   'PARENT',
 ];
 
-const DISALLOWED_FORMATS = ['MUSIC'];
+const DISALLOWED_FORMATS = ['MUSIC', 'MANGA', 'NOVEL', 'ONE_SHOT'];
 
 export type CrawlProgressCallback = (
   loaded: number,
@@ -45,6 +45,39 @@ export async function crawlTimeline(
   const mediaMap = new Map<number, AniListMedia>();
   const rawEdges: RawEdge[] = [];
   const edgeSet = new Set<string>();
+
+  const universePhrases = new Set<string>();
+  const universeTokens = new Set<string>();
+  const STOPWORDS = new Set([
+    'the', 'and', 'part', 'season', 'movie', 'special', 'ova', 'ona',
+    'series', 'first', 'second', 'final', 'act', 'chapter', 'film', 'edition', 'stage'
+  ]);
+
+  function extractTokens(mediaTitle?: { english?: string; romaji?: string; native?: string }) {
+    if (!mediaTitle) return;
+    const titles = [mediaTitle.english, mediaTitle.romaji, mediaTitle.native].filter(Boolean) as string[];
+    for (const title of titles) {
+      const base = title.split(/[:\-~]|part|season/i)[0].trim().toLowerCase();
+      if (base.length >= 3) {
+        universePhrases.add(base);
+      }
+      const clean = title.toLowerCase().replace(/[^a-z0-9\s]/g, ' ');
+      const parts = clean.split(/\s+/).filter((w) => w.length >= 3 && !STOPWORDS.has(w));
+      parts.forEach((p) => universeTokens.add(p));
+    }
+  }
+
+  function belongsToUniverse(t?: { english?: string; romaji?: string; native?: string }): boolean {
+    if ((universePhrases.size === 0 && universeTokens.size === 0) || !t) return true;
+    const combined = `${t.english || ''} ${t.romaji || ''} ${t.native || ''}`.toLowerCase();
+    for (const phrase of universePhrases) {
+      if (combined.includes(phrase)) return true;
+    }
+    for (const token of universeTokens) {
+      if (combined.includes(token)) return true;
+    }
+    return false;
+  }
 
   function addEdge(source: number, target: number, type: RelationType) {
     if (source === target) return;
@@ -87,6 +120,15 @@ export async function crawlTimeline(
       for (const media of mediaList) {
         mediaMap.set(media.id, media);
 
+        if (media.id === rootMediaId) {
+          extractTokens(media.title);
+        }
+
+        const isMediaCrossover =
+          media.id !== rootMediaId &&
+          (/\b(vs\.?|x)\b/i.test(media.title?.english || '') ||
+            /\b(vs\.?|x)\b/i.test(media.title?.romaji || ''));
+
         if (media.relations?.edges) {
           for (const edge of media.relations.edges) {
             const relType = edge.relationType;
@@ -96,10 +138,38 @@ export async function crawlTimeline(
             if (!ALLOWED_RELATIONS.includes(relType)) continue;
             if (target.format && DISALLOWED_FORMATS.includes(target.format)) continue;
 
+            // Block crossover universe leaks: do not follow PARENT on non-root, and do not crawl out of crossover nodes
+            if (relType === 'PARENT' && media.id !== rootMediaId) continue;
+            if (isMediaCrossover) continue;
+
+            // Block unrelated anime from entering the universe graph
+            if (!belongsToUniverse(target.title)) {
+              continue;
+            }
+
             if (relType === 'SEQUEL') {
-              addEdge(media.id, target.id, 'SEQUEL');
+              const isMediaMovie = media.format === 'MOVIE';
+              const isTargetMovie = target.format === 'MOVIE';
+              if (isMediaMovie && isTargetMovie) {
+                // Standalone theatrical movies are side stories, not strict narrative sequential dependencies
+                addEdge(media.id, target.id, 'SIDE_STORY');
+              } else {
+                addEdge(media.id, target.id, 'SEQUEL');
+              }
             } else if (relType === 'PREQUEL') {
-              addEdge(target.id, media.id, 'SEQUEL');
+              const isMediaMovie = media.format === 'MOVIE';
+              const isTargetMovie = target.format === 'MOVIE';
+              if (isMediaMovie && isTargetMovie) {
+                addEdge(target.id, media.id, 'SIDE_STORY');
+              } else {
+                const mYear = media.seasonYear || (media as any).startDate?.year;
+                const tYear = target.seasonYear || (target as any).startDate?.year;
+                if (mYear && tYear && tYear > mYear + 1) {
+                  addEdge(media.id, target.id, 'SIDE_STORY');
+                } else {
+                  addEdge(target.id, media.id, 'SEQUEL');
+                }
+              }
             } else if (relType === 'PARENT') {
               addEdge(target.id, media.id, 'SIDE_STORY');
             } else if (relType === 'SIDE_STORY' || relType === 'SPIN_OFF') {
