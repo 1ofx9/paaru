@@ -64,10 +64,13 @@ export const AnimeEdge = memo(({
     curvature: 0.35,
   });
 
+  const colSpan = targetX - sourceX;
+  const isMultiColumn = colSpan > 65;
+
   const hasMultiRank = Boolean(edgeData?.points && edgeData.points.length > 3);
   let edgePath = bezierPath;
-  let finalLabelX = defaultLabelX;
-  let finalLabelY = defaultLabelY;
+  let finalLabelX = isMultiColumn ? sourceX + 24 : defaultLabelX;
+  let finalLabelY = isMultiColumn ? sourceY : defaultLabelY;
 
   if (hasMultiRank && edgeData?.points) {
     const intermediate = edgeData.points.slice(1, -1);
@@ -82,8 +85,10 @@ export const AnimeEdge = memo(({
       const apexX = (sourceX + targetX) / 2;
       const apexY = peakY;
       edgePath = smoothArchPath(sourceX, sourceY, targetX, targetY, apexX, apexY);
-      finalLabelX = apexX;
-      finalLabelY = apexY;
+      if (!isMultiColumn) {
+        finalLabelX = apexX;
+        finalLabelY = apexY;
+      }
     }
   }
 
@@ -95,6 +100,12 @@ export const AnimeEdge = memo(({
 
   const isHighlighted = edgeData?.isHighlighted;
   const isDimmed = edgeData?.isDimmed;
+
+  // Only show label pills on resting canon / alternative edges or when highlighted on hover
+  // This prevents dozens of overlapping "Side Story" badges from cluttering the canvas
+  const showLabel = Boolean(
+    labelText && (isHighlighted || isSequel || isAlternative)
+  );
 
   const edgeStyle = {
     ...style,
@@ -113,13 +124,14 @@ export const AnimeEdge = memo(({
         ? 'drop-shadow(0 0 4px rgba(5,150,105,0.5))'
         : 'drop-shadow(0 0 4px rgba(234,88,12,0.5))'
       : undefined,
+    pointerEvents: 'none' as const,
     transition: 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
   };
 
   return (
     <>
-      <BaseEdge id={id} path={edgePath} style={edgeStyle} markerEnd={markerEnd} />
-      {labelText && (
+      <BaseEdge id={id} path={edgePath} style={edgeStyle} markerEnd={markerEnd} interactionWidth={0} />
+      {showLabel && (
         <EdgeLabelRenderer>
           <div
             style={{
