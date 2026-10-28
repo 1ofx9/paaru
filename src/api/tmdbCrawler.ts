@@ -409,19 +409,14 @@ export async function crawlTMDBTVUniverse(
         const companionInfo = mapShowToMediaMap(showData, mediaMap, rawEdges);
         showInfoMap.set(showData.id, companionInfo);
 
-        if (cq.relation === 'PREQUEL') {
-          rawEdges.push({
-            source: companionInfo.lastSeasonId,
-            target: targetShowInfo.firstSeasonId,
-            type: 'PREQUEL',
-          });
-        } else if (cq.relation === 'SEQUEL') {
+        if (cq.relation === 'SEQUEL') {
           rawEdges.push({
             source: targetShowInfo.lastSeasonId,
             target: companionInfo.firstSeasonId,
             type: 'SEQUEL',
           });
         } else {
+          // SPIN_OFF or PREQUEL branch cleanly from the anchor show's first season to the companion show's first season
           rawEdges.push({
             source: targetShowInfo.firstSeasonId,
             target: companionInfo.firstSeasonId,
