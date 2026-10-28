@@ -121,6 +121,7 @@ export interface SearchHistoryItem {
   coverImage?: string;
   format?: string;
   seasonYear?: number | null;
+  mode?: SuiteMode;
 }
 
 export interface TimelineStats {
@@ -140,6 +141,7 @@ export interface AnimeNodeData extends AniListMedia {
   userProgress?: number;
   userScore?: number;
   isNextUp?: boolean;
+  isSearchedRoot?: boolean;
   viewMode?: ViewMode;
   isInPath?: boolean;
   isDirectHover?: boolean;
