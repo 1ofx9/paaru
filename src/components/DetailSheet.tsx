@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { X, ExternalLink, Star, Calendar, Building2, Check, Film, Tv } from 'lucide-react';
+import { X, ExternalLink, Star, Calendar, Building2, Film, Tv } from 'lucide-react';
 import type { AnimeNodeData } from '../types/anime';
 import type { SuiteMode } from '../types/media';
 import { formatMediaType, formatEpisodeCount, formatSynopsis } from '../utils/formatters';
@@ -41,7 +41,6 @@ export const DetailSheet: React.FC<DetailSheetProps> = ({
     media.studios?.edges?.find((e) => e.isMain)?.node?.name ||
     media.studios?.edges?.[0]?.node?.name;
 
-  const isCompleted = media.watchStatus === 'COMPLETED';
   const isCurrent = media.watchStatus === 'CURRENT';
   const isPlanning = media.watchStatus === 'PLANNING';
   const isNextUp = media.isNextUp;
@@ -111,22 +110,12 @@ export const DetailSheet: React.FC<DetailSheetProps> = ({
                       </span>
                     )}
                   </div>
-                ) : isCompleted ? (
-                  <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/10 dark:bg-emerald-500/20 border border-emerald-500/25 text-emerald-700 dark:text-emerald-300 text-[11px] font-mono font-medium mb-1.5">
-                    <Check className="w-3 h-3 text-[#059669] dark:text-[#a7f3d0] stroke-[2.5]" />
-                    Completed
-                  </div>
                 ) : isPlanning ? (
                   <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-sky-500/10 dark:bg-sky-500/20 border border-sky-500/25 text-sky-700 dark:text-sky-300 text-[11px] font-mono font-medium mb-1.5">
                     <span className="w-2 h-2 rounded-full bg-[#0284c7] dark:bg-[#bae6fd]" />
                     Planning
                   </div>
                 ) : null
-              ) : isCompleted ? (
-                <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/10 dark:bg-emerald-500/20 border border-emerald-500/25 text-emerald-700 dark:text-emerald-300 text-[11px] font-mono font-medium mb-1.5">
-                  <Check className="w-3 h-3 text-[#059669] dark:text-[#a7f3d0] stroke-[2.5]" />
-                  Watched
-                </div>
               ) : isMovieSuite ? (
                 <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-zinc-100 dark:bg-white/8 border border-zinc-200 dark:border-white/10 text-zinc-700 dark:text-zinc-300 text-[11px] font-mono font-medium mb-1.5">
                   <Film className="w-3 h-3 text-zinc-500" />
