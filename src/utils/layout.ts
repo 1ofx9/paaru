@@ -111,8 +111,24 @@ export function buildDagreLayout(
   // Normalize edge directions based on the chosen ordering mode:
   // - In 'release' mode, flow earlier public release -> later public release
   // - In 'chronological' mode, flow in-universe story progression (prequels -> sequels -> side stories)
-  const normalizedEdges: RawEdge[] = [];
-  const edgeKeySet = new Set<string>();
+  const getRelationPriority = (t: string): number => {
+    switch (t) {
+      case 'SEQUEL':
+      case 'PREQUEL':
+        return 10;
+      case 'SIDE_STORY':
+      case 'SPIN_OFF':
+        return 7;
+      case 'ALTERNATIVE':
+        return 5;
+      case 'PARENT':
+        return 3;
+      default:
+        return 1;
+    }
+  };
+
+  const pairEdges = new Map<string, RawEdge>();
 
   for (const edge of validEdges) {
     let source = edge.source;
@@ -125,23 +141,39 @@ export function buildDagreLayout(
     const mediaB = filteredMediaMap.get(target);
     if (!mediaA || !mediaB) continue;
 
+    const timeA = getMediaTimestamp(mediaA);
+    const timeB = getMediaTimestamp(mediaB);
+
     if (orderMode === 'release') {
-      const timeA = getMediaTimestamp(mediaA);
-      const timeB = getMediaTimestamp(mediaB);
       if (timeB < timeA) {
         source = edge.target;
         target = edge.source;
         if (type === 'SEQUEL') type = 'PREQUEL';
         else if (type === 'PREQUEL') type = 'SEQUEL';
       }
+    } else {
+      if (type === 'PREQUEL') {
+        source = edge.target;
+        target = edge.source;
+        type = 'SEQUEL';
+      }
     }
 
-    const key = `${source}->${target}`;
-    if (!edgeKeySet.has(key)) {
-      edgeKeySet.add(key);
-      normalizedEdges.push({ source, target, type });
+    const pairKey = source < target ? `${source}:${target}` : `${target}:${source}`;
+    const existing = pairEdges.get(pairKey);
+
+    if (!existing) {
+      pairEdges.set(pairKey, { source, target, type });
+    } else {
+      const currPrio = getRelationPriority(type);
+      const existPrio = getRelationPriority(existing.type);
+      if (currPrio > existPrio) {
+        pairEdges.set(pairKey, { source, target, type });
+      }
     }
   }
+
+  const normalizedEdges: RawEdge[] = Array.from(pairEdges.values());
 
   // Transitive reduction: remove redundant bypass edges so lines don't clutter
   const adj = new Map<number, number[]>();
@@ -422,7 +454,6 @@ export function buildDagreLayout(
       source: e.source.toString(),
       target: e.target.toString(),
       type: 'animeEdge',
-      animated: isSequel || isPrequel,
       style: {
         stroke: strokeColor,
         strokeWidth: edgeStrokeWidth,

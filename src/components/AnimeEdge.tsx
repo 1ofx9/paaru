@@ -64,13 +64,10 @@ export const AnimeEdge = memo(({
     curvature: 0.35,
   });
 
-  const colSpan = targetX - sourceX;
-  const isMultiColumn = colSpan > 65;
-
   const hasMultiRank = Boolean(edgeData?.points && edgeData.points.length > 3);
   let edgePath = bezierPath;
-  let finalLabelX = isMultiColumn ? sourceX + 24 : defaultLabelX;
-  let finalLabelY = isMultiColumn ? sourceY : defaultLabelY;
+  let finalLabelX = defaultLabelX;
+  let finalLabelY = defaultLabelY;
 
   if (hasMultiRank && edgeData?.points) {
     const intermediate = edgeData.points.slice(1, -1);
@@ -85,10 +82,8 @@ export const AnimeEdge = memo(({
       const apexX = (sourceX + targetX) / 2;
       const apexY = peakY;
       edgePath = smoothArchPath(sourceX, sourceY, targetX, targetY, apexX, apexY);
-      if (!isMultiColumn) {
-        finalLabelX = apexX;
-        finalLabelY = apexY;
-      }
+      finalLabelX = apexX;
+      finalLabelY = apexY;
     }
   }
 
