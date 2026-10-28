@@ -87,6 +87,8 @@ export const AnimeNode = memo(({ id, data, selected }: AnimeNodeProps) => {
             ${
               selected
                 ? 'border-zinc-950 dark:border-white ring-2 ring-zinc-950/20 dark:ring-white/40 shadow-xl scale-[1.03]'
+                : data.isSearchedRoot
+                ? 'border-zinc-300 dark:border-white ring-2 ring-zinc-400/30 dark:ring-white/25 shadow-[0_0_20px_rgba(0,0,0,0.12),0_0_8px_rgba(0,0,0,0.08)] dark:shadow-[0_0_24px_rgba(255,255,255,0.22),0_0_8px_rgba(255,255,255,0.14)]'
                 : data.isDirectHover
                 ? 'border-zinc-400 dark:border-zinc-400 shadow-md -translate-y-0.5'
                 : isNextUp
@@ -165,6 +167,8 @@ export const AnimeNode = memo(({ id, data, selected }: AnimeNodeProps) => {
         ${
           selected
             ? 'border-zinc-950 dark:border-white ring-2 ring-zinc-950/20 dark:ring-white/40 shadow-lg'
+            : data.isSearchedRoot
+            ? 'border-zinc-400 dark:border-white ring-2 ring-zinc-400/25 dark:ring-white/20 shadow-[0_0_20px_rgba(0,0,0,0.12),0_0_8px_rgba(0,0,0,0.08)] dark:shadow-[0_0_25px_rgba(255,255,255,0.22),0_0_10px_rgba(255,255,255,0.12)]'
             : data.isDirectHover
             ? 'border-zinc-400 dark:border-zinc-400 shadow-md -translate-y-0.5'
             : isNextUp

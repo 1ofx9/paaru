@@ -62,13 +62,11 @@
   background-color: transparent !important;
 }
 
-.react-flow__edge-path {
+.react-flow__edge,
+.react-flow__edge-path,
+.react-flow__edge-interaction {
+  pointer-events: none !important;
   transition: stroke 0.15s, stroke-width 0.15s;
-}
-
-.react-flow__edge:hover .react-flow__edge-path {
-  stroke: #a1a1aa !important;
-  stroke-width: 2.5px !important;
 }
 
 ::-webkit-scrollbar {
