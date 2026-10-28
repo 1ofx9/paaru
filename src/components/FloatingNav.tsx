@@ -98,6 +98,7 @@ export const FloatingNav: React.FC<FloatingNavProps> = ({
   const [inputTMDBKey, setInputTMDBKey] = useState(getTMDBKey);
   const [showTMDBKey, setShowTMDBKey] = useState(false);
   const [tmdbKeySaved, setTmdbKeySaved] = useState(false);
+  const [activeTMDBKey, setActiveTMDBKey] = useState(getTMDBKey);
 
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<AniListMedia[]>([]);
@@ -387,7 +388,7 @@ export const FloatingNav: React.FC<FloatingNavProps> = ({
       clearTimeout(timeout);
       controller.abort();
     };
-  }, [searchQuery, suiteMode, onSelectTimeline, onSelectSuiteMode]);
+  }, [searchQuery, suiteMode, activeTMDBKey, onSelectTimeline, onSelectSuiteMode]);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent | PointerEvent) {
@@ -400,19 +401,17 @@ export const FloatingNav: React.FC<FloatingNavProps> = ({
         setIsTMDBKeyModalOpen(false);
       }
       if (
-        searchInputRef.current &&
-        !searchInputRef.current.contains(target) &&
-        searchDropdownRef.current &&
-        !searchDropdownRef.current.contains(target)
+        searchWrapperRef.current &&
+        !searchWrapperRef.current.contains(target)
       ) {
         setSearchResults([]);
         setIsSearchFocused(false);
       }
     }
 
-    document.addEventListener('pointerdown', handleClickOutside, true);
+    document.addEventListener('pointerdown', handleClickOutside);
     return () => {
-      document.removeEventListener('pointerdown', handleClickOutside, true);
+      document.removeEventListener('pointerdown', handleClickOutside);
     };
   }, []);
 
@@ -435,7 +434,7 @@ export const FloatingNav: React.FC<FloatingNavProps> = ({
       setSelectedIndex((prev) => (prev - 1 + selectableItems.length) % selectableItems.length);
     } else if (e.key === 'Enter') {
       e.preventDefault();
-      const target = selectableItems[selectedIndex];
+      const target = selectableItems[selectedIndex] || selectableItems[0];
       if (target) {
         if (target.type === 'graph') {
           onFocusNode?.(target.id);
@@ -650,6 +649,11 @@ export const FloatingNav: React.FC<FloatingNavProps> = ({
               <input
                 ref={searchInputRef}
                 type="text"
+                enterKeyHint="search"
+                autoCapitalize="none"
+                autoComplete="off"
+                autoCorrect="off"
+                spellCheck={false}
                 placeholder={
                   hasActiveAnime
                     ? "Search, jump, or paste..."
@@ -1222,7 +1226,9 @@ export const FloatingNav: React.FC<FloatingNavProps> = ({
                     <form
                       onSubmit={(e) => {
                         e.preventDefault();
-                        setTMDBKey(inputTMDBKey.trim());
+                        const key = inputTMDBKey.trim();
+                        setTMDBKey(key);
+                        setActiveTMDBKey(key);
                         setTmdbKeySaved(true);
                         setTimeout(() => {
                           setIsTMDBKeyModalOpen(false);
@@ -1264,6 +1270,7 @@ export const FloatingNav: React.FC<FloatingNavProps> = ({
                           onClick={() => {
                             setTMDBKey('');
                             setInputTMDBKey('');
+                            setActiveTMDBKey('');
                             setTmdbKeySaved(true);
                             setTimeout(() => {
                               setIsTMDBKeyModalOpen(false);
@@ -1344,8 +1351,10 @@ export const FloatingNav: React.FC<FloatingNavProps> = ({
                   <form
                     onSubmit={(e) => {
                       e.preventDefault();
-                      if (inputTMDBKey.trim()) {
-                        setTMDBKey(inputTMDBKey.trim());
+                      const key = inputTMDBKey.trim();
+                      if (key) {
+                        setTMDBKey(key);
+                        setActiveTMDBKey(key);
                         setTmdbKeySaved(true);
                       }
                     }}
@@ -1357,7 +1366,6 @@ export const FloatingNav: React.FC<FloatingNavProps> = ({
                         placeholder="Paste TMDB v3 API key..."
                         value={inputTMDBKey}
                         onChange={(e) => setInputTMDBKey(e.target.value)}
-                        autoFocus
                         className="w-full pl-3 pr-9 py-2 text-xs font-mono bg-zinc-100 dark:bg-white/4 text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 dark:placeholder-zinc-500 rounded-xl border border-zinc-200 dark:border-white/10 focus:outline-none focus:border-zinc-900 dark:focus:border-white transition-colors text-center"
                       />
                       <button
